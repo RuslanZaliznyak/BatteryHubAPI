@@ -4,7 +4,7 @@ import json
 from typing import List, Dict, Any
 from app.services.barcode_gen import barcode_gen
 from flask import abort
-from sqlalchemy import exc, asc, text, desc
+from sqlalchemy import exc, asc, text, desc, update
 
 from app.extensions import db
 from app.models.parameters import Name, Color, Source, Voltage, Resistance, Capacity, Weight
@@ -33,8 +33,47 @@ class Database:
     """
 
     @classmethod
-    def update_record(cls):
-        pass
+    def update_record(cls, barcode, record_data: dict):
+        record = cls.get_record_by_barcode(barcode=barcode)
+
+        name_id = cls.get_or_create_record(Name, 'name', record_data['name'])
+        color_id = cls.get_or_create_record(Color, 'color', record_data['color'])
+        voltage_id = cls.get_or_create_record(Voltage, 'voltage', record_data['voltage'])
+        resistance_id = cls.get_or_create_record(Resistance, 'resistance', record_data['resistance'])
+        capacity_id = cls.get_or_create_record(Capacity, 'capacity', record_data['capacity'])
+        weight_id = cls.get_or_create_record(Weight, 'weight', record_data['weight'])
+        source_id = cls.get_or_create_record(Source, 'source', record_data['source'])
+
+        params = RealParameters.query.filter_by(name_id=name_id,
+                                                color_id=color_id,
+                                                resistance_id=resistance_id,
+                                                voltage_id=voltage_id,
+                                                capacity_id=capacity_id,
+                                                weight_id=weight_id
+                                                ).first()
+
+        if not params:
+            new_params = RealParameters(name_id=name_id,
+                                        color_id=color_id,
+                                        resistance_id=resistance_id,
+                                        voltage_id=voltage_id,
+                                        capacity_id=capacity_id,
+                                        weight_id=weight_id
+                                        )
+            db.session.add(new_params)
+            db.session.flush()
+            params_id = new_params.id
+        else:
+            params_id = params.id
+
+        update_stmt = update(BatteryData).where(BatteryData.id == record.id).values(
+            barcode=barcode_gen(),
+            real_params_id=params_id,
+            source_id=source_id,
+            datetime=datetime.datetime.now()
+        )
+        db.session.execute(update_stmt)
+        db.session.commit()
 
     @classmethod
     def serialize_record(cls, record) -> Dict[str, Any]:

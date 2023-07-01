@@ -6,6 +6,13 @@ from app.services.api import APIHandler
 from app.services.db import Database
 
 
+@bp.route('/api/records/<barcode>', methods=['UPDATE'])
+def update_record(barcode):
+    record_data = request.get_json()
+    record = Database.update_record(barcode=barcode, record_data=record_data)
+    print(record)
+    return 'ok'
+
 
 @bp.route('/api/records', methods=['GET'])
 def get_records():
