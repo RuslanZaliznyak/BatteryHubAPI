@@ -101,7 +101,8 @@ class APIHandler:
                     source=json_records['source'],
                     capacity=int(json_records['capacity']),
                     weight=float(json_records['weight']),
-                    datetime=current_datetime)
+                    datetime=current_datetime
+            )
             return api_data
         except KeyError as ex:
             return f"Missing key in JSON record: {ex}"

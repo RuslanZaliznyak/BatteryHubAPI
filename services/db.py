@@ -1,6 +1,7 @@
 import datetime
 import importlib
 import json
+from pprint import pprint
 from typing import List, Dict, Any
 from app.services.barcode_gen import barcode_gen
 from flask import abort
@@ -35,6 +36,8 @@ class Database:
     @classmethod
     def process_data_to_database(cls, record_data: dict):
         try:
+            print(f'process_data_to_database: {record_data}')
+
             name_id = cls.get_or_create_record(Name, 'name',
                                                record_data['name'])
             color_id = cls.get_or_create_record(Color, 'color',
@@ -49,7 +52,7 @@ class Database:
                                                  record_data['weight'])
             source_id = cls.get_or_create_record(Source, 'source',
                                                  record_data['source'])
-
+            print('before params')
             params = RealParameters.query.filter_by(name_id=name_id,
                                                     color_id=color_id,
                                                     resistance_id=resistance_id,
@@ -57,6 +60,7 @@ class Database:
                                                     capacity_id=capacity_id,
                                                     weight_id=weight_id
                                                     ).first()
+            print(params)
             if not params:
                 new_params = RealParameters(name_id=name_id,
                                             color_id=color_id,
@@ -155,8 +159,8 @@ class Database:
     @classmethod
     def get_or_create_record(cls, model, field_name, value) -> Any | None:
         try:
+            print('get or create record')
             record = model.query.filter_by(**{field_name: value}).first()
-
             if model == Source and field_name == 'source' and value is None:
                 return None
 
@@ -168,11 +172,12 @@ class Database:
                 return new_record.id
             return record.id
         except Exception as ex:
-            error_msg = f"Error occurred while getting or creating a record: {ex}"
+            return f"Error occurred while getting or creating a record: {ex}"
 
     @classmethod
     def add_record(cls, record: dict) -> dict[str, str] | dict[str, str] | list[dict[str, str | int]]:
         try:
+            print(f'add_record: {record}')
             processed_data_ids = cls.process_data_to_database(record_data=record)
 
             new_record = BatteryData(barcode=barcode_gen(),
@@ -190,7 +195,7 @@ class Database:
             return {'error': error_msg, 'description': 'Unknown error'}
 
     @classmethod
-    def get_records_by_sorting(cls, res: dict) -> dict[str, str]:
+    def get_records_by_sorting(cls, res: dict) -> list[dict[str, Any]] | dict[str, str]:
         try:
             query = cls.query_to_db()
             records = query.filter(*res).all()

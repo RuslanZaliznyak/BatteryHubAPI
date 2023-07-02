@@ -1,3 +1,5 @@
+import json
+
 from flask import jsonify, request
 from app.api import bp
 from app.services.api import APIHandler
@@ -6,7 +8,7 @@ from app.services.db import Database
 
 @bp.route('/api/records', methods=['POST'])
 def add_record():
-    data = request.get_json()
+    data = json.loads(request.get_json())
     result = Database.add_record(data)
 
     if 'error' in result:
@@ -85,3 +87,11 @@ def delete_record(barcode: int):
     else:
         return jsonify({'error': 'Record not found.'}), 404
 
+
+@bp.route('/api/records/last', methods=['GET'])
+def get_last_record():
+    record = Database.get_records_by_limit(1)
+    if record:
+        return jsonify(record), 200
+    else:
+        return jsonify({'error': 'Record not found.'}), 404
