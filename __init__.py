@@ -1,7 +1,6 @@
 import logging
 
 from flask import Flask
-from waitress import serve
 
 from app.config import Config
 from app.extensions import db
